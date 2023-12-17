@@ -147,6 +147,7 @@ void* RunChannelOutputThread(void* data) {
     bool doForceOutput = false;
     while (RunThread) {
         startTime = GetTime();
+    // TODO: Add detailed logging from here...
         if (multiSync->isMultiSyncEnabled() && sequence->IsSequenceRunning()) {
             multiSync->SendSeqSyncPacket(sequence->m_seqFilename, channelOutputFrame, 1.0 * ((float)channelOutputFrame) / RefreshRate);
         }
@@ -172,7 +173,7 @@ void* RunChannelOutputThread(void* data) {
             }
             sequence->SendSequenceData();
         }
-
+    // TODO: ...to here. Ideally see what is taking most of the time.
         sendTime = GetTime();
 
         if (sequence->IsSequenceRunning() || (onceMore >= 1)) {
