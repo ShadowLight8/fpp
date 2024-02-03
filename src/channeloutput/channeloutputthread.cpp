@@ -149,6 +149,7 @@ void* RunChannelOutputThread(void* data) {
     bool doForceOutput = false;
     while (RunThread) {
         startTime = GetTime();
+    // TODO: Add detailed logging from here...
         if (multiSync->isMultiSyncEnabled() && sequence->IsSequenceRunning()) {
             multiSync->SendSeqSyncPacket(sequence->m_seqFilename, channelOutputFrame, 1.0 * ((float)channelOutputFrame) / RefreshRate);
         }
@@ -174,7 +175,7 @@ void* RunChannelOutputThread(void* data) {
             }
             sequence->SendSequenceData();
         }
-
+    // TODO: ...to here. Ideally see what is taking most of the time.
         sendTime = GetTime();
 
         if (sequence->IsSequenceRunning() || (onceMore >= 1)) {
@@ -200,7 +201,7 @@ void* RunChannelOutputThread(void* data) {
         if (totalTime > 150000) {
             // very slow, log immediately
             slowFrameCount = 3;
-        } else if (totalTime > 50000) {
+        } else if (totalTime > 50000) { // TODO: Not sure where the 150000 and 50000 values came from, seems like they should be based on RefreshRate
             // could be a very transient blip, we'll log if
             // it happens 3 frames in a row
             slowFrameCount++;
@@ -221,9 +222,10 @@ void* RunChannelOutputThread(void* data) {
         if (sequence->IsSequenceRunning() || doForceOutput || sequence->hasBridgeData()) {
             // REMOTE mode keeps looping a few extra times before we blank
             onceMore = (getFPPmode() == REMOTE_MODE) ? 20 : 1;
-            int sleepTime = LightDelay - (processTime - startTime);
+            int sleepTime = LightDelay - totalTime;
             if ((channelOutputFrame <= 1) || (sleepTime <= 0) || (startTime > (lastStatTime + 1000000))) {
                 if (sleepTime < 0)
+                    // TODO: Does this indicate a problem if sleepTime is less than zero? Does that mean things can't keep up?
                     sleepTime = 0;
                 if (startTime > (lastStatTime + 1000000)) {
                     lastStatTime = startTime;
@@ -261,6 +263,7 @@ void* RunChannelOutputThread(void* data) {
         doForceOutput = false;
         // Calculate how long we need to nanosleep()
         long dt = (LightDelay - (GetTime() - startTime)) * 1000;
+        // TODO: At this point, things could be really behind if dt is negative. Log something?
         if (RunThread && dt > 0) {
             if (outputThreadCond.wait_for(lock, std::chrono::nanoseconds(dt)) == std::cv_status::no_timeout) {
                 LogDebug(VB_CHANNELOUT, "Forced output\n");
